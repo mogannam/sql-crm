@@ -1,0 +1,23 @@
+{
+  "name": "sql-crm",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "jest"
+  },
+  "keywords": [],
+  "author": "Joe Mogannam",
+  "license": "MIT",
+  "dependencies": {
+    "bower": "^1.8.13",
+    "console.table": "^0.10.0",
+    "inquirer": "^7.0.3",
+    "mysql2": "^2.3.3"
+  },
+  "devDependencies": {
+    "jest": "^27.3.1"
+  },
+  "___comment_": "npm install jest --save-dev",
+  "___testcomment_": " npm test Employee "
+}
