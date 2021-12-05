@@ -4,7 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "jest"
+    "test": "jest",
+    "start": "node server.js"
   },
   "keywords": [],
   "author": "Joe Mogannam",
@@ -12,8 +13,10 @@
   "dependencies": {
     "bower": "^1.8.13",
     "console.table": "^0.10.0",
+    "express": "^4.17.1",
     "inquirer": "^7.0.3",
-    "mysql2": "^2.3.3"
+    "mysql2": "^2.3.3",
+    "node-fetch": "^2.1.0"
   },
   "devDependencies": {
     "jest": "^27.3.1"

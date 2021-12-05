@@ -2,106 +2,57 @@ const fs = require('fs');
 const inquirer = require("inquirer");
 const QuestionList = require('./lib/QuestionList');
 const Manager = require('./lib/Manager');
-const Engineer = require('./lib/Engineer');
+const Department = require('./lib/Department');
+//const departmentPublic = require('./public/department');
 const Intern = require('./lib/Intern');
 const EngineerQuestions = require('./lib/EngineerQuestions');
 const ManagerQuestions = require('./lib/ManagerQuestions');
 const InternQuestions = require('./lib/InternQuestions');
+const db = require('./db/connection');
+const cTable = require('console.table');
 
-
+//const fetch = require("node-fetch");
+//import fetch from 'node-fetch';
 
 const myTeam = [];
 let global_id = 0;
 const outPath = "dist/index.html";
 
-const writeHtmlFile = fileContent => {
-    return new Promise((resolve, reject) => {
-      fs.writeFile(outPath, fileContent, err => {
-        if (err) {
-          reject(err);
-          return;
-        }
-  
-        resolve({
-          ok: true,
-          message: 'File created!'
-        });
-      });
-    });
-  };
 
 
-  const generateHTML = arrEmployees => {
+//helper function, to help call asyn msql2 calls
 
-    const head = `<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">`
-    const bodyOpen = `<body class=""> <div class="col d-flex justify-content-center">`
-    const bodyClose = `</div></body>`
-    const jumbotron = `<header class="jumbotron"> <h1 class="text-center"> My Team</h1> </header>`
-    let allCards = ``;
-    arrEmployees.forEach(aEmployee => {
-        // open a card
-        let icon =``;
-        switch(aEmployee.role){
-            case'Manager':
-                icon = `<img src="../src/cup.svg" class="bi bi-cup"></img>`
-                break;
-            case'Engineer':
-                icon = `<img src="../src/eyeglasses.svg" class="bi bi-eyeglasses"></img>`
-                break;
-            default:
-                icon = `<img src="../src/book-half.svg" class="bi bi-book-half"></img>`
-                break;
-        }
 
-        let aCard = `
-            <div class="card text-center " style="width: 18rem;">
-                <div class="card-header bg-primary">
-                    <h5 class="card-title">${aEmployee.name}</h5>
-                    <p>${icon}${aEmployee.role}</p>
-                </div> 
-                <div class="card-body">`
-        aCard += `<ul class="list-group list-group-flush">`
-        for (const key in aEmployee) {
-            if (Object.hasOwnProperty.call(aEmployee, key)) {
-                const element = aEmployee[key];
-                switch(key){
-                    case'name':
-                        break;
-                    case'role':
-                        break;
-                    case'id':
-                        aCard += `<li class="list-group-item">ID: ${element}</li>`
-                        break
-                    case'email':
-                        aCard += `<li class="list-group-item"> Email: <a target="_blank" href="mailto: ${element}">${element}</a></li>`
-                        break;
-                    case'officeNumber':
-                        aCard += `<li class="list-group-item">Office Number: ${element}</li>`;
-                        break;
-                    case'github':
-                        aCard += `<li class="list-group-item"> GitHub: <a target="_blank" href="https://github.com/${element}">${element}</a></li>`;
-                        break;
-                    case'school':
-                        aCard += `<li class="list-group-item">School: ${element}</li>`
-                        break;
-                    default:
-                        aCard += `<li class="list-group-item">${key} ${element}</li>`
-                        break;
-                }
-            }
-        }
-
-        // close the card
-        aCard += `</ul></div></div>`
-        allCards += aCard  
-    });
     
-  
-    // bundle up all the individual answers into one string, then write the string to a file
-    const writeToFile = head+jumbotron+bodyOpen+allCards+bodyClose
-    writeHtmlFile(writeToFile)
-  
-  }
+const selectData = async (whichTable) => {
+
+    const sql = `SELECT * from ${whichTable}`;
+    
+    try {
+        db.query(sql, (err, rows) => {
+            console.table(rows);
+            promptMainMenu()
+          });        
+    
+    } catch ( err ) {
+        console.log(`catch error: ${err}`)
+    }
+}
+
+const insertData =  async (whichTable, columsString, valuesString) => {
+
+    const sql = `SELECT * from ${whichTable}`;
+    
+    try {
+        db.query(sql, (err, rows) => {
+            console.table(rows);
+            promptMainMenu()
+          });        
+    
+    } catch ( err ) {
+        console.log(`catch error: ${err}`)
+    }
+}
 
 
 // from answers get, name, email, github/officenumber/school
@@ -111,12 +62,6 @@ const writeHtmlFile = fileContent => {
 const pushTeamMember = async (backStoryQuest, userChoice) =>{
     //todo: switch case to fine tune user choice
    
-    //let backStoryQuest = "";
-    //backStoryQuest = new EngineerQuestions(role='Engineer')
-    //let teamMemberConstructor = "" // todo update constructor function in switch
-    //console.log("in pushTeamMember")
-    //console.log(backStoryQuest.getInquirerQuestions())
-    global_id++;
     await inquirer.prompt(backStoryQuest.getInquirerQuestions()).then( async answers =>{
         // To Do call teamMemberConstructor
         //console.log(answers)
@@ -140,12 +85,8 @@ const pushTeamMember = async (backStoryQuest, userChoice) =>{
 
         }
         await console.log("done pushing team member")
-        await generateHTML(myTeam);
          
     })
-    //console.log("exiting pushTeamMember")
-    //await console.log(myTeam)
-
 }
 
 
@@ -162,13 +103,15 @@ const promptMainMenu = async() =>  {
                 break;
             case "View All Departments":
                 // a set of questions, and a user choice to create a team member
+                await selectData('department');
                 //await pushTeamMember(new ManagerQuestions(role='Manager'),answers.userChoice )
-                await promptMainMenu()
+                
                 break;
             case "View All Roles":
+                await selectData('role');
                 break;
             case "View All Employees":
-                
+                await selectData('employee');
                 break;
             case "Add a Department":
                 break;
