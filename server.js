@@ -1,8 +1,8 @@
 const express = require('express');
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || 3002;
 const app = express();
 const mysql = require('mysql2');
-const apiRoutes = require('./routes/apiRoutes');
+//const apiRoutes = require('./routes/apiRoutes');
 
 
 // Express middleware
@@ -37,7 +37,7 @@ app.listen(PORT, () => {
   });
 
 // Use apiRoutes
-app.use('/api', apiRoutes);
+//app.use('/api', apiRoutes);
 
   // Default response for any other request (Not Found)
 app.use((req, res) => {

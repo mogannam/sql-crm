@@ -4,9 +4,9 @@ const QuestionList = require('./lib/QuestionList');
 const Manager = require('./lib/Manager');
 const Department = require('./lib/Department');
 //const departmentPublic = require('./public/department');
-const Intern = require('./lib/Intern');
-const EngineerQuestions = require('./lib/EngineerQuestions');
-const ManagerQuestions = require('./lib/ManagerQuestions');
+const RoleQuestions = require('./lib/RoleQuestions');
+const DepartmentQuestions = require('./lib/DepartmentQuestions');
+
 const InternQuestions = require('./lib/InternQuestions');
 const db = require('./db/connection');
 const cTable = require('console.table');
@@ -24,7 +24,7 @@ const outPath = "dist/index.html";
 
 
     
-const selectData = async (whichTable) => {
+const selectDataAndDisplay = async (whichTable) => {
 
     const sql = `SELECT * from ${whichTable}`;
     
@@ -38,10 +38,38 @@ const selectData = async (whichTable) => {
         console.log(`catch error: ${err}`)
     }
 }
+const selectData = async (whichTable, whichColumns) => {
 
-const insertData =  async (whichTable, columsString, valuesString) => {
+    const sql = `SELECT ${whichColumns} from ${whichTable}`;
+    
+    try {
+        db.query(sql, (err, rows) => {
+            return rows;
+          });        
+    
+    } catch ( err ) {
+        console.log(`catch error: ${err}`)
+    }
+}
 
-    const sql = `SELECT * from ${whichTable}`;
+const insertData =  async (whichTable,columsString,valuesString) => {
+    console.log('in insertData')
+    console.log(` valuesString  ${valuesString}`)
+    let sql = ``
+    // `SELECT * from ${whichTable}`;
+    switch (whichTable){
+        case "department":
+            sql = `Insert into ${whichTable} (${columsString}) values ('${valuesString}')`
+            break;
+        case "role":
+            
+            
+            console.log(`allDepartments is ${allDepartments}`)
+            break;
+        default:
+            console.log('Sorry an error occured inserting data.')
+    }
+    console.log(`sql line 53: ${sql}`)
     
     try {
         db.query(sql, (err, rows) => {
@@ -59,24 +87,24 @@ const insertData =  async (whichTable, columsString, valuesString) => {
 // from user choice get role
 //const employeeInst = new Manager(name='Data', global_id, email='Data@myfirm.com', role='Engineer', github='data');
 
-const pushTeamMember = async (backStoryQuest, userChoice) =>{
+const pushData = async (questionObject, userChoice) =>{
     //todo: switch case to fine tune user choice
    
-    await inquirer.prompt(backStoryQuest.getInquirerQuestions()).then( async answers =>{
+    await inquirer.prompt(questionObject.getInquirerQuestions()).then( async answers =>{
         // To Do call teamMemberConstructor
         //console.log(answers)
         switch (userChoice){
-            case "Manager":
-                //todo call manager constructor
-                await myTeam.push(new Manager(answers.name, id=global_id, answers.email,role=userChoice,answers.officeNumber))
+            case "Department":
+                insertData('department', 'name', answers.name)
+                selectDataAndDisplay('Department')
                 break;
-            case "Engineer":
-                //todo engineer constructor
-                await myTeam.push(new Engineer(answers.name, id=global_id, answers.email,role=userChoice,answers.github))
+            case "Role":
+                insertData('role', 'title, salary, departmentid', `${answers.title}, ${answers.salary}`)
+                selectDataAndDisplay('Role')
                 break;
-            case "Intern":
+            case "Employee":
                 //todo intern constructor
-                await myTeam.push(new Intern(answers.name, id=global_id, answers.email,role=userChoice,answers.school))
+                //await myTeam.push(new Intern(answers.name, id=global_id, answers.email,role=userChoice,answers.school))
                 break;
             default:
                 console.log("somethign went wrong adding the team member!")
@@ -84,7 +112,7 @@ const pushTeamMember = async (backStoryQuest, userChoice) =>{
         
 
         }
-        await console.log("done pushing team member")
+        
          
     })
 }
@@ -93,9 +121,11 @@ const pushTeamMember = async (backStoryQuest, userChoice) =>{
 
 const promptMainMenu = async() =>  {
     const choices = ['View All Departments', 'View All Roles', 'View All Employees', 'Add a Department', 'Add a Role', 'Add an Employee', 'Update an Employee Role', 'Done']
-    const growTeamQuest = new QuestionList("userChoice","What would you like to do? ", 'list', choices)
+    const crmMenuQuestions = new QuestionList("userChoice","What would you like to do? ", 'list', choices)
     //console.log(growTeamQuest.getQuestion())
-    inquirer.prompt(growTeamQuest.getQuestion()).then(async answers=>{
+    const arrQuesst = [];
+    let aQuestion = "";
+    inquirer.prompt(crmMenuQuestions.getQuestion()).then(async answers=>{
         //console.log(answers)
         switch(answers.userChoice){
             case "Done":
@@ -103,19 +133,29 @@ const promptMainMenu = async() =>  {
                 break;
             case "View All Departments":
                 // a set of questions, and a user choice to create a team member
-                await selectData('department');
+                await selectDataAndDisplay('department');
                 //await pushTeamMember(new ManagerQuestions(role='Manager'),answers.userChoice )
                 
                 break;
             case "View All Roles":
-                await selectData('role');
+                await selectDataAndDisplay('role');
                 break;
             case "View All Employees":
-                await selectData('employee');
+                await selectDataAndDisplay('employee');
                 break;
             case "Add a Department":
+                const aDeptQuestion = new DepartmentQuestions(name="name",message=aQuestion)
+                
+                //console.log(aDeptQuestion.getInquirerQuestions())
+                pushData(aDeptQuestion,"Department")
+                
                 break;
             case "Add a Role":
+                let aRoleQuestion = new RoleQuestions(name="name",message=aQuestion)
+                //new Question(name=`salary`, message='Enter a salary'),
+                let allDepartments = selectData('department','name')
+                console.log(allDepartments)
+                //pushData(aDeptQuestion,"Role")
                 break
             case "Add an Employee":
                 break;
