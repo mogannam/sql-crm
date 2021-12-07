@@ -1,5 +1,5 @@
 const express = require('express');
-const PORT = process.env.PORT || 3002;
+const PORT = process.env.PORT || 3001;
 const app = express();
 const mysql = require('mysql2');
 //const apiRoutes = require('./routes/apiRoutes');
@@ -8,6 +8,8 @@ const mysql = require('mysql2');
 // Express middleware
 app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
+
+
 
 // Connect to database
 const db = mysql.createConnection(
@@ -20,6 +22,7 @@ const db = mysql.createConnection(
       database: 'crm'
     },
     console.log('Connected to the crm database.')
+    
   );
 
 //   db.query(`SELECT * FROM employee`, (err, rows) => {
