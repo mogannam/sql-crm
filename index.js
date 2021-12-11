@@ -14,7 +14,12 @@ const cTable = require('console.table');
 const { json } = require('express');
 const EmployeeQuestions = require('./lib/EmployeeQuestions');
 
-
+const sqlSelectDept = `select name as 'Department Name', id as 'Department Id' from department`
+const sqlSelectRole = `select role.title as 'Job Title', role.id as 'Role Id', department.name as 'Department Name', role.salary as Salary from role left join department on role.departmentId=department.id`
+const sqlSelectEmployee = 'select e.id as "Employee Id", e.firstName as "First Name", e.lastName as "Last Name", r.title as "Employee Job Title", d.name as "Department", r.salary as "Employee Salary", m.firstName as "Manager First Name", m.lastName as "Manager Last Name" from employee as e left join employee as m on e.managerId=m.id left join role as r on e.roleId=r.id left join department as d on r.departmentId=d.id'
+const sqlSumSalaryByDept = `select d.name "Department Name", d.id "Department Id", SUM(r.salary) "Total Budget" from role r left join department d on r.departmentId=d.id group by d.id`
+const sqlEmployeeByDept =  `${sqlSelectEmployee} order by r.departmentId`
+const sqlEmployeeByMang = `${sqlSelectEmployee} order by e.managerId`
 class Database {
     constructor(connection){
       this.connection = mysql.createConnection(
@@ -79,20 +84,18 @@ const pushData = async (questionObject, userChoice, arrayOfArrayofObj) =>{
                 const arrManagerObj = arrayOfArrayofObj[1]
                 const roleSelected = arrRoleObj.filter(roleObject => roleObject.title == answers.title )
                 let managerSelected = arrManagerObj.filter(managerObject => `${managerObject.firstName},${managerObject.lastName}` == answers.firstNameLastName)
-                console.table(`roleSelected`, roleSelected)
-                console.table(`managerSelected`,managerSelected)
-                console.log(`managerSelected ${managerSelected}`)
+                
                 
                 if(answers.firstNameLastName === "N/A")
                     managerSelected = null
                 else
-                    managerSelected = managerSelected[0].managerId
-                
+                    managerSelected = managerSelected[0].id
+                console.log(`Manager Selected ${JSON.stringify(managerSelected)}`)
 
                 aDatabase.query(`insert into employee (firstName, lastName, roleId, managerId) values ('${answers.firstName}', '${answers.lastName}', ${roleSelected[0].id}, ${managerSelected})`)
                 let employeeReturned = {};
-                const selectSql = `select * from employee`
-                aDatabase.query(selectSql).then(
+                //const selectSql = `select * from employee`
+                aDatabase.query(sqlSelectEmployee).then(
                     rows =>{
                         employeeReturned = rows
                     }
@@ -110,8 +113,8 @@ const pushData = async (questionObject, userChoice, arrayOfArrayofObj) =>{
 
                 aDatabase.query(`insert into role (title, salary, departmentId) values ('${answers.title}', ${answers.salary}, ${deptIDSelected}) on duplicate key update title='${answers.title}', salary=${answers.salary}, departmentId=${deptIDSelected}`)
                 let rowReturned = {};
-                const selectSqlRole = `select * from role`
-                aDatabase.query(selectSqlRole).then(
+                //const selectSqlRole = `select * from role`
+                aDatabase.query(sqlSelectRole).then(
                     rows =>{
                         rowReturned = rows
                     }
@@ -125,7 +128,7 @@ const pushData = async (questionObject, userChoice, arrayOfArrayofObj) =>{
                 
                 aDatabase.query(`insert into department (name) values ('${answers.name}') on duplicate key update name='${answers.name}'`)
                 let deptReturned = {};
-                aDatabase.query('select * from department').then(
+                aDatabase.query(sqlSelectDept).then(
                     rows =>{
                         deptReturned = rows
                     }
@@ -157,7 +160,8 @@ const pushData = async (questionObject, userChoice, arrayOfArrayofObj) =>{
     
                     aDatabase.query(`update employee set roleId = ${roleSelected2.id} where id = ${employeeSelected.id}`)
                     let employeeReturned2 = {};
-                    const selectEmployeeSql = `select * from employee`
+                    //const selectEmployeeSql = `select * from employee`
+                    const selectEmployeeSql = `select e.firstName as "First Name", e.lastName as "Last Name", r.title as "Employee Role", m.firstName as "Manager First Name", m.lastName as "Manager Last Name" from employee as e left join employee as m on e.managerId=m.id left join role as r on e.roleId=r.id where e.id = ${employeeSelected.id}`
                     aDatabase.query(selectEmployeeSql).then(
                         rows =>{
                             employeeReturned2 = rows
@@ -186,7 +190,7 @@ const pushData = async (questionObject, userChoice, arrayOfArrayofObj) =>{
 
 const promptMainMenu = async() =>  {
     
-    const choices = ['View All Departments', 'View All Roles', 'View All Employees', 'Add a Department', 'Add a Role', 'Add an Employee', 'Update an Employee Role', 'Done']
+    const choices = ['View All Departments', 'View All Roles', 'View All Employees', 'Add a Department', 'Add a Role', 'Add an Employee', 'Update an Employee Role', 'View Department Budget', 'View Employees by Department', 'View Employees by Manager', 'Done']
     const crmMenuQuestions = new QuestionList("userChoice","What would you like to do? ", 'list', choices)
     //console.log(growTeamQuest.getQuestion())
     const arrQuesst = [];
@@ -205,7 +209,7 @@ const promptMainMenu = async() =>  {
                 
                 let departmentReturned;
                 
-                aDatabase.query(`select name as 'Department Name' from department`).then(
+                aDatabase.query(sqlSelectDept).then(
                     rows =>{
                         departmentReturned = rows
                     }
@@ -220,7 +224,7 @@ const promptMainMenu = async() =>  {
             case "View All Roles":
                 
                 let rolesReturned;
-                aDatabase.query(`select role.title as 'Role Title', role.salary as Salary, department.name as 'Department Name' from role left join department on role.departmentId=department.id`).then(
+                aDatabase.query(sqlSelectRole).then(
                     rows =>{
                         rolesReturned = rows
                     }
@@ -232,7 +236,7 @@ const promptMainMenu = async() =>  {
             case "View All Employees":
                 
                 let employeesReturned;
-                aDatabase.query('select * from employee').then(
+                aDatabase.query(sqlSelectEmployee).then(
                     rows =>{
                         employeesReturned = rows
                     }
@@ -328,6 +332,39 @@ const promptMainMenu = async() =>  {
                     })
                 })
 
+                break;
+            case"View Department Budget":
+                let departmentTotals;
+                aDatabase.query(sqlSumSalaryByDept).then(
+                    rows =>{
+                        departmentTotals = rows
+                    }
+                ).then(()=>{
+                    console.table(departmentTotals)
+                    promptMainMenu()
+                })
+                break;
+            case"View Employees by Department":
+                let employeeByDept;
+                aDatabase.query(sqlEmployeeByDept).then(
+                    rows =>{
+                        employeeByDept = rows
+                    }
+                ).then(()=>{
+                    console.table(employeeByDept)
+                    promptMainMenu()
+                })
+                break;
+            case"View Employees by Manager":
+                let employeeByMang;
+                aDatabase.query(sqlEmployeeByMang).then(
+                    rows =>{
+                        employeeByMang = rows
+                    }
+                ).then(()=>{
+                    console.table(employeeByMang)
+                    promptMainMenu()
+                })
                 break;
             default:
                 console.log("\n Sorry, something went wrong choose again. \n")

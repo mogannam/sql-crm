@@ -22,7 +22,6 @@ insert into role (title,salary,departmentId)
 
   insert into employee (firstName,lastName,roleId,ManagerId)
     values 
-      ('null', 'null',1,null),
       ('Data','Data',1, null),
       ('Wessley','Crusher',2,1),
       ('Beverly','Crusher',3,null),
