@@ -53,8 +53,7 @@ class Database {
   
   }
 
-//const fetch = require("node-fetch");
-//import fetch from 'node-fetch';
+
 
 const myTeam = [];
 let global_id = 0;
@@ -62,161 +61,16 @@ const outPath = "dist/index.html";
 
 
 
-//helper function, to help call asyn msql2 calls
-
-
-    
-const selectDataAndDisplay = async (whichTable) => {
-
-    const sql = `SELECT * from ${whichTable}`;
-    
-    try {
-        db.query(sql, (err, rows) => {
-            console.table(rows);
-            promptMainMenu()
-          });        
-    
-    } catch ( err ) {
-        console.log(`catch error: ${err}`)
-    }
-}
-const selectData = async (whichTable, whichColumns) => {
-
-    const sql = `SELECT ${whichColumns} from ${whichTable}`;
-    //console.log(`in selectData data ${sql}`)
-    
-    try {
-        db.query(sql, async (err, rows) => {
-            
-            return rows
-          });    
-    
-    } catch ( err ) {
-        console.log(`catch error: ${err}`)
-    }
-}
-
-const insertData =  async (whichTable,columsString,valuesString) => {
-    console.log('in insertData')
-    console.log(` valuesString  ${valuesString}`)
-    let sql = ``
-    // `SELECT * from ${whichTable}`;
-    switch (whichTable){
-        case "role":
-            sql = `Insert into ${whichTable} (${columsString}) values ('${valuesString}')`
-            break;
-        default:
-            console.log('Sorry an error occured inserting data.')
-    }
-    console.log(`sql line 53: ${sql}`)
-    
-    try {
-        db.query(sql, (err, rows) => {
-            console.table(rows);
-            promptMainMenu()
-          });        
-    
-    } catch ( err ) {
-        console.log(`catch error: ${err}`)
-    }
-}
 
 
 
-
-
-// from answers get, name, email, github/officenumber/school
-// from user choice get role
-//const employeeInst = new Manager(name='Data', global_id, email='Data@myfirm.com', role='Engineer', github='data');
-
-const pushData = async (questionObject, userChoice) =>{
-    //todo: switch case to fine tune user choice
-    const aDatabase = new Database();
-    await inquirer.prompt(questionObject.getInquirerQuestions()).then( async answers =>{
-        // To Do call teamMemberConstructor
-        //console.log(answers)
-        switch (userChoice){
-            case "Department":
-                //insertData('department', 'name', answers.name)
-                let departmentReturned;
-                
-                aDatabase.query(`insert into department (name) values ('${answers.name}')`)
-                let deptReturned = {};
-                aDatabase.query('select * from department').then(
-                    rows =>{
-                        deptReturned = rows
-                    }
-                ).then(()=>{
-                    console.table(deptReturned)
-                    promptMainMenu()
-                })
-                //selectDataAndDisplay('Department')
-                break;
-            case "Role":
-                //insertRole('role', 'title, salary, departmentid', `${answers.title}, ${answers.salary}`)
-                //selectDataAndDisplay('Role')
-                break;
-            case "Employee":
-                //todo intern constructor
-                //await myTeam.push(new Intern(answers.name, id=global_id, answers.email,role=userChoice,answers.school))
-                break;
-            default:
-                console.log("somethign went wrong adding the team member!")
-                break;
-        
-
-        }
-        
-         
-    })
-}
-
-const pushRole = async (questionObject, userChoice, arrayOfDepartments) =>{
+const pushData = async (questionObject, userChoice, arrayOfArrayofObj) =>{
     //todo: switch case to fine tune user choice
    
     await inquirer.prompt(questionObject.getInquirerQuestions()).then( async answers =>{
         // To Do call teamMemberConstructor
         //console.log(answers)
-        const aDatabase = new Database();
-        switch (userChoice){
-            
-            case "Role":
-                console.log(`answers: ${JSON.stringify(answers) }`)
-                console.log(`first object: ${JSON.stringify(arrayOfDepartments)}`)
-                let oneDepartmentObj = arrayOfDepartments.filter(deptObject => deptObject.name == answers.name )
-                console.log(`oneDepartmentObj ${JSON.stringify(oneDepartmentObj)}`)
-                let deptIDSelected = oneDepartmentObj[0].id
-
-                aDatabase.query(`insert into role (title, salary, departmentId) values ('${answers.title}', ${answers.salary}, ${deptIDSelected})`)
-                let deptReturned = {};
-                const selectSql = `select * from role`
-                aDatabase.query(selectSql).then(
-                    rows =>{
-                        deptReturned = rows
-                    }
-                ).then(()=>{
-                    console.table(deptReturned)
-                    promptMainMenu()
-                })
-                
-                break;
-            default:
-                console.log("somethign went wrong adding the team member!")
-                break;
-        
-
-        }
-        
-         
-    })
-}
-
-const pushEmployee = async (questionObject, userChoice, arrayOfArrayofObj) =>{
-    //todo: switch case to fine tune user choice
-   
-    await inquirer.prompt(questionObject.getInquirerQuestions()).then( async answers =>{
-        // To Do call teamMemberConstructor
-        //console.log(answers)
+        //let selectSql = ''
         const aDatabase = new Database();
         switch (userChoice){
             
@@ -236,7 +90,7 @@ const pushEmployee = async (questionObject, userChoice, arrayOfArrayofObj) =>{
                 
 
                 aDatabase.query(`insert into employee (firstName, lastName, roleId, managerId) values ('${answers.firstName}', '${answers.lastName}', ${roleSelected[0].id}, ${managerSelected})`)
-                let deptReturned = {};
+                let employeeReturned = {};
                 const selectSql = `select * from employee`
                 aDatabase.query(selectSql).then(
                     rows =>{
@@ -246,6 +100,74 @@ const pushEmployee = async (questionObject, userChoice, arrayOfArrayofObj) =>{
                     console.table(employeeReturned)
                     promptMainMenu()
                 })
+                
+                break;
+            case "Role":
+                
+                let oneDepartmentObj = arrayOfArrayofObj[0].filter(deptObject => deptObject.name == answers.name )
+                //console.log(`oneDepartmentObj ${JSON.stringify(oneDepartmentObj)}`)
+                let deptIDSelected = oneDepartmentObj[0].id
+
+                aDatabase.query(`insert into role (title, salary, departmentId) values ('${answers.title}', ${answers.salary}, ${deptIDSelected}) on duplicate key update title='${answers.title}', salary=${answers.salary}, departmentId=${deptIDSelected}`)
+                let rowReturned = {};
+                const selectSqlRole = `select * from role`
+                aDatabase.query(selectSqlRole).then(
+                    rows =>{
+                        rowReturned = rows
+                    }
+                ).then(()=>{
+                    console.table(rowReturned)
+                    promptMainMenu()
+                })
+                break;
+            case "Department":
+                let departmentReturned;
+                
+                aDatabase.query(`insert into department (name) values ('${answers.name}') on duplicate key update name='${answers.name}'`)
+                let deptReturned = {};
+                aDatabase.query('select * from department').then(
+                    rows =>{
+                        deptReturned = rows
+                    }
+                ).then(()=>{
+                    console.table(deptReturned)
+                    promptMainMenu()
+                })
+                
+                break;
+            case "Update Role":
+                
+                    const arrRoleObj2 = arrayOfArrayofObj[0]
+                    const arrEmployeeObj = arrayOfArrayofObj[1]
+                    // console.table(`arrRoleObj2`, arrRoleObj2)
+                    // console.table(`arrEmployeeObj`,arrEmployeeObj)
+                    // console.table(`answers.title `,answers.title )
+                    
+                    let roleSelected2 = arrRoleObj2.filter(roleObject2 => roleObject2.title == answers.title )
+                    let employeeSelected = arrEmployeeObj.filter(employeeObject => `${employeeObject.firstName},${employeeObject.lastName}` == answers.firstNameLastName)
+                    // console.table(`roleSelected`, roleSelected2)
+                    // console.table(`employeeSelected`,employeeSelected)
+                    // console.log(`employeeSelected json stringify`, JSON.stringify(employeeSelected))
+                    
+                   
+                    employeeSelected = employeeSelected[0]
+                    roleSelected2 = roleSelected2[0]
+                    //console.log(`*****************************`)
+                    //console.table(`roleSelected2 after : ${JSON.stringify(roleSelected2)}`)
+    
+                    aDatabase.query(`update employee set roleId = ${roleSelected2.id} where id = ${employeeSelected.id}`)
+                    let employeeReturned2 = {};
+                    const selectEmployeeSql = `select * from employee`
+                    aDatabase.query(selectEmployeeSql).then(
+                        rows =>{
+                            employeeReturned2 = rows
+                        }
+                    ).then(()=>{
+                        console.table(employeeReturned2)
+                        promptMainMenu()
+                    })
+                    
+                    break;
                 
                 break;
             default:
@@ -279,11 +201,11 @@ const promptMainMenu = async() =>  {
                 break;
             case "View All Departments":
                 
-                //await selectDataAndDisplay('department');
+                
                 
                 let departmentReturned;
                 
-                aDatabase.query('select * from department').then(
+                aDatabase.query(`select name as 'Department Name' from department`).then(
                     rows =>{
                         departmentReturned = rows
                     }
@@ -296,9 +218,9 @@ const promptMainMenu = async() =>  {
                 
                 break;
             case "View All Roles":
-                //await selectDataAndDisplay('role');
+                
                 let rolesReturned;
-                aDatabase.query('select * from role').then(
+                aDatabase.query(`select role.title as 'Role Title', role.salary as Salary, department.name as 'Department Name' from role left join department on role.departmentId=department.id`).then(
                     rows =>{
                         rolesReturned = rows
                     }
@@ -308,7 +230,7 @@ const promptMainMenu = async() =>  {
                 })
                 break;
             case "View All Employees":
-                //await selectDataAndDisplay('employee');
+                
                 let employeesReturned;
                 aDatabase.query('select * from employee').then(
                     rows =>{
@@ -331,7 +253,7 @@ const promptMainMenu = async() =>  {
                 //new QuestionList(name=`salary`, message='Enter a salary'),
                 //constructor(name, message,type, choices)
                 
-                //selectData('department','name');
+                
                 //const aDatabase = new Database();
                 let deptReturned;
                 aDatabase.query('select * from department').then(
@@ -342,7 +264,8 @@ const promptMainMenu = async() =>  {
                     const choices = deptReturned.map(object=>object.name)
                     const deptListQuestion = new QuestionList(name='name', message="which Department is the role fore",type='list', choices)
                     aRoleQuestion.questions.push(deptListQuestion)
-                    pushRole(aRoleQuestion,"Role", deptReturned)
+                    //console.log(JSON.stringify(deptReturned))
+                    pushData(aRoleQuestion,"Role", [deptReturned])
                 }
 
                 )
@@ -371,13 +294,40 @@ const promptMainMenu = async() =>  {
                         //console.table(`choicesRole`, choicesRole)
                         aEmployeeQuest.questions.push(roleQuestionLst)
 
-                        pushEmployee(aEmployeeQuest,"Employee", [allRolesReturned,allEmployeesReturned])
+                        pushData(aEmployeeQuest,"Employee", [allRolesReturned,allEmployeesReturned])
 
                     })
                 })
 
                 break;
             case "Update an Employee Role":
+                let allEmployeesReturned2 = {}
+                let allRolesReturned2 = {}
+                let aEmployeeQuest2 = new EmployeeQuestions(role="Employee")
+                aDatabase.query('select * from employee').then(
+                    employeeRows =>{
+                        allEmployeesReturned2 = employeeRows
+                    }
+                ).then(()=>{
+                    //get roles
+                    aDatabase.query('select * from role').then( roleRows =>{
+                        allRolesReturned2 = roleRows
+                        const choices = allEmployeesReturned2.map(object=> `${object.firstName},${object.lastName}`)
+                        //choices.unshift("N/A")
+                        //const ManagerQuestionLst = new QuestionList(name='firstNameLastName', message="Select the employee's Manager",type='list', choices)
+                        const choicesRole = allRolesReturned2.map(object=> object.title)
+                        const roleQuestionLst = new QuestionList(name='title', message="Select the employee's role",type='list', choicesRole)
+                        const employeeQuestionLst = new QuestionList(name='firstNameLastName', message="Select the employee's to update",type='list', choices)
+                        aEmployeeQuest2.questions = []
+                        aEmployeeQuest2.questions.push(employeeQuestionLst)
+                        aEmployeeQuest2.questions.push(roleQuestionLst)
+                        //console.table("allRolesReturned2", allRolesReturned2)
+                        //console.table("allEmployeesReturned2", allEmployeesReturned2)
+                        pushData(aEmployeeQuest2,"Update Role", [allRolesReturned2,allEmployeesReturned2])
+
+                    })
+                })
+
                 break;
             default:
                 console.log("\n Sorry, something went wrong choose again. \n")
@@ -402,40 +352,6 @@ const init =  () =>{
 //console.log('Before')
 init()
 
-
-
-
-//console.log(`Local keep gpoing ${keepGoing}`)
-
-// const pushData = async (questionObject, userChoice) =>{
-//     //todo: switch case to fine tune user choice
-   
-//     await inquirer.prompt(questionObject.getInquirerQuestions()).then( async answers =>{
-//         // To Do call teamMemberConstructor
-//         //console.log(answers)
-//         switch (userChoice){
-//             case "Department":
-//                 insertData('department', 'name', answers.name)
-//                 selectDataAndDisplay('Department')
-//                 break;
-//             case "Role":
-//                 insertRole('role', 'title, salary, departmentid', `${answers.title}, ${answers.salary}`)
-//                 selectDataAndDisplay('Role')
-//                 break;
-//             case "Employee":
-//                 //todo intern constructor
-//                 //await myTeam.push(new Intern(answers.name, id=global_id, answers.email,role=userChoice,answers.school))
-//                 break;
-//             default:
-//                 console.log("somethign went wrong adding the team member!")
-//                 break;
-        
-
-//         }
-        
-         
-//     })
-// }
 
 
 
