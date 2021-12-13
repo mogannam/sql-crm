@@ -13,7 +13,6 @@
   * [Usage](#usage)
   * [Credits](#credits)
   * [Code](#Code)
-  * [License](#license) 
 # Installation 
  * npm i 
 # Usage 
